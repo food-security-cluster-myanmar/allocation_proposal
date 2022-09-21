@@ -88,6 +88,31 @@ theme_set(theme_light())
 ```
 
 
+## Introduction 
+
+This document outlines a proposal to calculate the Food Security Cluster PIN based on a combination of REACH MSNA data and FAO/WFP survey Round 3. 
+
+It is currently unclear if the fourth round of results from FAO/WFP will be ready in time for the rest of the 2023 planning exercises. Though, it should also be mentioned that a cursory inspection of the various datasets shows the MSNA to be very well conducted and a more than able replacement for the FAO/WFP survey, should it not be finished in time. 
+
+It is my intention, with these provisional results, to provide partners with information that might help shape the
+It is my intention, with this mock-up, to provide partners with information on how the state and township allocations may look in 2023. 
+
+I would also encourage any and all comments from all concerned parties. 
+
+## Data and references
+
+
+### References for this report
+
+* ACLED, (2022). ACLED data for Myanmar (2010-2022). Retrieved from https://acleddata.com on 2022-06-06. 
+* International Food Policy Research Institute (2022). Myanmar Household Welfare Survey (MHWS), Round 1. Harvard Dataverse, doi: 10.7910/DVN/1R3F3U,. Retrieved from https://doi.org/10.7910/DVN/1R3F3U on 2022-09-01. 
+* FAO and WFP (2022). Food Security Monitoring Survey Round 3. FAO and WFP. 
+* Food Security Cluster Myanmar (2022). Township Prioritisation. https://food-security-cluster-myanmar.github.io/mmr_township_prioritisation/. 
+* Food Security Cluster, Myanmar (2022). Understanding Conflict Dynamics in Myanmar through Conflict and Incident Data: A Food Security Perspective. https://food-security-cluster-myanmar.github.io/exploratory-data-analysis-acled-fsc/.
+* HARP-F and MIMU (2018). Vulnerability in Myanmar: A Secondary Data Review of Needs, Coverage and Gaps. http://themimu.info/vulnerability-in-myanmar.
+* REACH (2022). Myanmar Multi-sector Needs Assessment. REACH. 
+
+
 ```{r datasets, message=FALSE, warning=FALSE}
 pcodes <- read_excel("./data/Myanmar PCodes Release_9.3_Jan2021_(StRgn_Dist_Tsp_Town_Ward_VT).xlsx",
                      sheet = "03_Township") 
@@ -111,16 +136,10 @@ msna <- read_csv("./data/msna.csv")
 
 ```
 
-## Introduction 
+<br>
 
-This document outlines a proposal to calculate the Food Security Cluster PIN based on a combination of REACH MSNA data and FAO/WFP survey Round 3. 
+Additionally, the draft township-level PINs have been read into a simplet dataset [here]() for easy comparison and comsumption. 
 
-It is currently unclear if the fourth round of results from FAO/WFP will be ready in time for the rest of the 2023 planning exercises. Though, it should also be mentioned that a cursory inspection of the various datasets shows the MSNA to be very well conducted and a more than able replacement for the FAO/WFP survey, should it not be finished in time. 
-
-It is my intention, with these provisional results, to provide partners with information that might help shape the
-It is my intention, with this mock-up, to provide partners with information on how the state and township allocations may look in 2023. 
-
-I would also encourage any and all comments from all concerned parties. 
 
 <br><br><br>
 
@@ -692,4 +711,9 @@ nat %>%
 
 So far, the prioritisation exercise has bee fairly agnostics about conflict vs. pre-existing vulnerability, counting the higher of the two figures as the caseload for each township. Were a strategic decision to be made to change to focus only to conflict-affected areas, then these allocations should shift substantially. 
 
+```{r eval = FALSE}
+nat %>% 
+  rename(vulnerability_score = mdp_adjust) %>% 
+  write_csv("./data/draft_pin_dataset.csv")
+```
 
