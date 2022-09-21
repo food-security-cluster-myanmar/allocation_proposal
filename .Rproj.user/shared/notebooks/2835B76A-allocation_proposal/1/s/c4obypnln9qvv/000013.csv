@@ -1,0 +1,41 @@
+"0","  tbl %>% 
+     mutate_at(vars(population,  
+                   conflict_affected, 
+                   vulnerable, 
+                   tsp_moderate, 
+                   tsp_severe), 
+               ~ round(.x, digits = 0)) %>% 
+    mutate(pc_insecure = round((tsp_moderate + tsp_severe) / population * 100,
+                               digits = 2)) %>% 
+    select(township, 
+         population, 
+         `conflict score` = conflict_score, 
+         `conflict affected` = conflict_affected, 
+         `pre-ex. vulnerable` = vulnerable, 
+         `moderately insecure` = tsp_moderate, 
+         `severely insecure` = tsp_severe, 
+         `% food insecure` = pc_insecure, 
+         PIN = tsp_pin) %>%
+    mutate(`%_PIN` = round(PIN / sum(PIN) * 100, 
+                          digits = 2), 
+           `conflict score` = round(`conflict score` * 100, 
+                                    digits = 2)) %>% 
+    mutate_at(vars(population, 
+                   `conflict affected`, 
+                   `pre-ex. vulnerable`, 
+                   `moderately insecure`, 
+                   `severely insecure`, 
+                   PIN), 
+              ~ round(.x)) %>% 
+    arrange(desc(PIN)) %>% 
+    adorn_totals(""row"") %>% 
+    mutate(`%_PIN` = ifelse(`%_PIN` > 90 & `%_PIN` < 110, 
+                            100, `%_PIN`)) %>% 
+    flextable() %>% 
+    set_caption(""Proposed PIN breakdown by township"") %>% 
+    theme_zebra() %>% 
+    fontsize(size = 10, part = ""all"")
+"
+"2","Error in UseMethod(""tbl_vars"") : 
+  no applicable method for 'tbl_vars' applied to an object of class ""function""
+"

@@ -1,0 +1,23 @@
+"0","survey <- read_csv(""./data/survey3.csv"") %>% 
+  mutate(rcsi = 
+           r_csi_less_qlty * 1 + 
+           r_csi_borrow * 2 + 
+           r_csi_meal_nb * 1 + 
+           r_csi_meal_size * 1 + 
+           r_csi_meal_adult * 3, 
+         rcsi_range = range_wna(rcsi))
+"
+"2","Warning: One or more parsing issues, see `problems()` for details"
+"2","[1mRows: [22m[34m3518[39m [1mColumns: [22m[34m403[39m
+"
+"2","[36m--[39m [1mColumn specification[22m [36m----------------------------------------------------------------------------------[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m   (28): survey_id, operator_id, adm0_name, adm0_iso3, adm1_pcode, adm3_pcode, survey_date, adm3_na...
+[32mdbl[39m  (362): x, adm1_name, total_case_duration, resp_age, resp_gender, adm3_bago, adm3_magway, adm3_man...
+[33mlgl[39m   (12): income_third_cropcheck, income_third_remit, hh_migration_other, notefcs, rcsi_note, crop_p...
+[34mdate[39m   (1): qc_step2_date
+"
+"2","
+[36mi[39m Use [38;5;235m[48;5;253m[38;5;235m[48;5;253m`spec()`[48;5;253m[38;5;235m[49m[39m to retrieve the full column specification for this data.
+[36mi[39m Specify the column types or set [38;5;235m[48;5;253m[38;5;235m[48;5;253m`show_col_types = FALSE`[48;5;253m[38;5;235m[49m[39m to quiet this message.
+"

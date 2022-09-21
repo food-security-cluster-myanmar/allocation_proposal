@@ -1,0 +1,60 @@
+"0","read_excel(""./data/REACH_MSNA 2022_Dataset_with_Weights_External.xlsx"", 
+         sheet = ""HH_dataset"") %>%  
+  clean_names() %>% 
+  mutate(hhfcs_inv = range_wna(112 - fs_calculated_fcs), 
+         not_improved_housing = ifelse(
+           snfi_sheltertype %in% c(""makeshift_shelter"",
+                                   ""unfinished_non_enclosed_building"",
+                                   ""tent"",
+                                   ""dont_know"",
+                                   ""other"",
+                                   ""collective_shelter""), 1, 0), 
+         not_improved_water_monsoon = ifelse(
+           wash_drinkingwatersource_monsoon %in% c(""borehole_tubewell"",
+                                                   ""piped_connection_to_house_or_neighbors_house"",
+                                                   ""public_tapstandpipe"",
+                                                   ""rain_water_collection"",
+                                                   ""protected_well"",
+                                                   ""protected_spring""), 0, 1), 
+         not_improved_water_dry = ifelse(
+           wash_drinkingwatersource_dry %in% c(""borehole_tubewell"",
+                                                   ""piped_connection_to_house_or_neighbors_house"",
+                                                   ""public_tapstandpipe"",
+                                                   ""rain_water_collection"",
+                                                   ""protected_well"",
+                                                   ""protected_spring""), 0, 1), 
+         not_improved_water = ifelse(not_improved_water_monsoon == 1 | 
+                                       not_improved_water_dry == 1, 1, 0), 
+         not_improved_sanitation = ifelse(
+           wash_sanitationfacility %in% c(""flush_or_pourflush_toilet"",
+                                         ""pit_latrine_with_a_slab_and_platform"",
+                                         ""pit_vip_toilet""), 1, 0), 
+         rural = ifelse(ward_village == ""ward"", 0, 1), 
+         concern_violence = ifelse(prot_security_concerns_boys %in% 
+                                     c(""threatenedviolence"",
+                                       ""detained"",
+                                       ""recruitedarmedgroups"",
+                                       ""injuredexplosive"") |
+                                     prot_security_concerns_girls %in% 
+                                     c(""threatenedviolence"",
+                                       ""detained"",
+                                       ""recruitedarmedgroups"",
+                                       ""injuredexplosive"") |
+                                     prot_security_concerns_women %in% 
+                                     c(""threatenedviolence"",
+                                       ""detained"",
+                                       ""recruitedarmedgroups"",
+                                       ""injuredexplosive"") | 
+                                     prot_security_concerns_men %in% 
+                                     c(""threatenedviolence"",
+                                       ""detained"",
+                                       ""recruitedarmedgroups"",
+                                       ""injuredexplosive""), 
+                                   1, 0)) %>% 
+   rename(state = state_region_2) %>% 
+  write_csv(""./data/msna.csv"")
+"
+"2","New names:
+* state_region -> state_region...2
+* state_region -> state_region...19
+"
