@@ -68,7 +68,6 @@ library(flextable)
 library(skimr)
 library(RColorBrewer)
 library(lubridate)
-library(here)
 
 range01 <- function(x){(x-min(x))/(max(x)-min(x))}
 range_wna <- function(x){(x-min(x, na.rm = TRUE))/(max(x, na.rm = TRUE)-min(x, na.rm = TRUE))}
@@ -100,9 +99,8 @@ It is my intention, with this mock-up, to provide partners with information on h
 
 I would also encourage any and all comments from all concerned parties. 
 
-<br><br><br>
-
 ## Data and references
+
 
 ### References for this report
 
@@ -169,13 +167,14 @@ states <- msna %>%
               mutate(
                 fcs_status = case_when(
                   hhfcs <= 21 ~ "poor",
-                  hhfcs >= 21.5 & hhfcs <= 35 ~ "borderline",
-                  hhfcs > 35 ~ "acceptable"),
+                  hhfcs >= 21.5 &
+                    hhfcs <= 35 ~ "borderline",
+                  hhfcs > 35 ~ "acceptable"
+                ),
                 rcsi_status = ifelse(rcsi >= 4,
-                                     "marginal", "secure")) %>%
-              group_by(adm_name, 
-                       fcs_status, 
-                       rcsi_status) %>%
+                                     "marginal", "secure")
+              ) %>%
+              group_by(adm_name, fcs_status, rcsi_status) %>%
               summarise(weights = sum(weight_final), 
                         .groups = "drop") %>%
               mutate(pc = weights / sum(weights)) %>%
@@ -185,7 +184,7 @@ states <- msna %>%
               pivot_wider(names_from = rcsi_status,
                           values_from = pc),
             by = "state") %>% 
-mutate(marginal_weight = marginal * weight,
+  mutate(marginal_weight = marginal * weight,
           secure_weight = secure * weight) %>% 
   pivot_longer(cols = c(marginal_weight, 
                         secure_weight)) %>% 
@@ -200,10 +199,10 @@ mutate(marginal_weight = marginal * weight,
     status == "acceptable" & name == "marginal_weight" ~ "marginally_secure", 
     status == "acceptable" & name == "secure_weight" ~ "secure"
   )) %>%  
-  filter(!is.na(domain)) %>%
   group_by(state, domain) %>% 
   summarise(final_weight = sum(final_weight), 
             .groups = "drop") %>% 
+  filter(!is.na(domain)) %>% 
   group_by(state) %>% 
   mutate(state_pc = round(final_weight / sum(final_weight) * 100, 
                           digits = 2)) %>% 
@@ -226,8 +225,10 @@ mutate(marginal_weight = marginal * weight,
                          digits = 2), 
          insecure = moderately_insecure + severely_insecure) %>% 
   mutate_at(vars(population, PIN), 
-            ~ round(.x)) 
- 
+            ~ round(.x)) %>% 
+  arrange(desc(insecure))
+
+sum(states$PIN, na.rm = TRUE)
 ```
 
 
@@ -259,6 +260,7 @@ states %>%
                         marginally_secure, 
                         moderately_insecure, 
                         severely_insecure)) %>%
+  filter(value > 0) %>% 
   ggplot(aes(y = value,
              x = fct_relevel(state, c("Rakhine", "Kayin", "Magway", "Sagaing",
                                       "Chin", "Kayah", "Shan", "Tanintharyi", 

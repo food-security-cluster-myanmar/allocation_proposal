@@ -1,0 +1,4 @@
+"0","conflict_score <-  read_csv(""./data/conflict_score_20220920.csv"") 
+"
+"2","Error: './data/conflict_score_20220920.csv' does not exist in current working directory ('C:/Users/seanywng/Downloads').
+"

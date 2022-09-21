@@ -68,7 +68,6 @@ library(flextable)
 library(skimr)
 library(RColorBrewer)
 library(lubridate)
-library(here)
 
 range01 <- function(x){(x-min(x))/(max(x)-min(x))}
 range_wna <- function(x){(x-min(x, na.rm = TRUE))/(max(x, na.rm = TRUE)-min(x, na.rm = TRUE))}
@@ -100,9 +99,8 @@ It is my intention, with this mock-up, to provide partners with information on h
 
 I would also encourage any and all comments from all concerned parties. 
 
-<br><br><br>
-
 ## Data and references
+
 
 ### References for this report
 
@@ -145,12 +143,13 @@ Additionally, the draft township-level PINs have been read into a simplet datase
 
 <br><br><br>
 
+
+
 ## State and Region PINs
 
 
-```{r states-df, warning=FALSE}
-
-states <- msna %>% 
+```{r}
+states <- msna %>%
   mutate(state = str_replace_all(state, "_", " "),
          state = str_remove_all(state, "east|west|north|south"), 
          state = str_trim(state),
@@ -169,67 +168,71 @@ states <- msna %>%
               mutate(
                 fcs_status = case_when(
                   hhfcs <= 21 ~ "poor",
-                  hhfcs >= 21.5 & hhfcs <= 35 ~ "borderline",
-                  hhfcs > 35 ~ "acceptable"),
+                  hhfcs >= 21.5 &
+                    hhfcs <= 35 ~ "borderline",
+                  hhfcs > 35 ~ "acceptable"
+                ),
                 rcsi_status = ifelse(rcsi >= 4,
-                                     "marginal", "secure")) %>%
-              group_by(adm_name, 
-                       fcs_status, 
-                       rcsi_status) %>%
+                                     "marginal", "secure")
+              ) %>%
+              group_by(adm_name, fcs_status, rcsi_status) %>%
               summarise(weights = sum(weight_final), 
                         .groups = "drop") %>%
-              mutate(pc = weights / sum(weights)) %>%
               ungroup() %>%
               filter(fcs_status == "acceptable") %>%
+              group_by(adm_name) %>% 
+              mutate(pc = weights / sum(weights)) %>% 
               select(state = adm_name, rcsi_status, pc) %>%
               pivot_wider(names_from = rcsi_status,
-                          values_from = pc),
+                          values_from = pc), 
             by = "state") %>% 
-mutate(marginal_weight = marginal * weight,
-          secure_weight = secure * weight) %>% 
-  pivot_longer(cols = c(marginal_weight, 
-                        secure_weight)) %>% 
-  mutate(final_weight = case_when(
-    status == "acceptable" ~ value, 
-    status == "borderline" ~ weight, 
-    status == "poor" ~ weight
-  )) %>%
+  pivot_longer(cols = c(marginal, secure)) %>% 
   mutate(domain = case_when(
     status == "poor" ~ "severely_insecure", 
     status == "borderline" ~ "moderately_insecure", 
-    status == "acceptable" & name == "marginal_weight" ~ "marginally_secure", 
-    status == "acceptable" & name == "secure_weight" ~ "secure"
-  )) %>%  
-  filter(!is.na(domain)) %>%
-  group_by(state, domain) %>% 
-  summarise(final_weight = sum(final_weight), 
-            .groups = "drop") %>% 
-  group_by(state) %>% 
-  mutate(state_pc = round(final_weight / sum(final_weight) * 100, 
-                          digits = 2)) %>% 
+    status == "acceptable" & name == "marginal" ~ "marginally_secure", 
+    status == "acceptable" & name == "secure" ~ "secure")) %>% 
+  mutate(final_weight = case_when(domain == "severely_insecure" ~ weight, 
+                                  domain == "moderately_insecure" ~ weight, 
+                                  domain == "marginally_secure" ~ value * weight, 
+                                  domain == "secure" ~ value * weight)) %>% 
+  filter(!is.na(final_weight)) %>% 
+  group_by(state) %>%
+  mutate(pc_weight = final_weight / sum(final_weight, na.rm = TRUE)) %>% 
   ungroup() %>% 
-  pivot_wider(names_from = domain, 
-              values_from = state_pc, 
-              values_fill = 0) %>% 
-  group_by(state) %>% 
-  summarise(final_weight = sum(final_weight), 
-            secure = max(secure, na.rm = TRUE), 
-            marginally_secure = max(marginally_secure, na.rm = TRUE), 
-            moderately_insecure = max(moderately_insecure, na.rm = TRUE), 
-            severely_insecure = max(severely_insecure, na.rm = TRUE)) %>% 
-  mutate(pc = round(final_weight / sum(final_weight, na.rm = TRUE) * 100, 
-                    digits = 2)) %>% 
-  relocate(pc, .after = final_weight) %>% 
-  mutate(population = pc / 100 * 53431391.27, 
-         PIN = (moderately_insecure + severely_insecure) / 100 * population, 
-         `%_PIN` = round(PIN / sum(PIN, na.rm = TRUE) * 100, 
-                         digits = 2), 
-         insecure = moderately_insecure + severely_insecure) %>% 
-  mutate_at(vars(population, PIN), 
-            ~ round(.x)) 
- 
+  left_join(pin %>%
+              group_by(state) %>%
+              summarise(population = sum(population_2021_proj, na.rm = TRUE)) %>%
+              mutate(state =
+                       str_trim(
+                         str_remove_all(state, "\\(North\\)|\\(South\\)|\\(East\\)|\\(West\\)")
+                       )) %>%
+              group_by(state) %>%
+              summarise_at("population", sum), 
+            by = "state") %>% 
+  mutate(secure = ifelse(domain == "secure", 
+                         pc_weight * population, 0), 
+         marginally_secure = ifelse(domain == "marginally_secure", 
+                                    pc_weight * population, 0), 
+    moderately_insecure = ifelse(domain == "moderately_insecure", 
+                                      pc_weight * population, 0),   
+         severely_insecure = ifelse(domain == "severely_insecure", 
+                                    pc_weight * population, 0)) %>% 
+  distinct(state, domain, population, weight, final_weight, pc_weight, 
+           secure, marginally_secure, 
+           moderately_insecure, severely_insecure) %>% 
+  mutate(PIN = moderately_insecure + severely_insecure)
+  
+     
+
+
 ```
 
+
+
+```{r states-df, warning=FALSE}
+glimpse(states)
+```
 
 
 Using the food consumption scores from the MSNA and the reduced coping strategies index from the FAO/WFP Survey Round 3, it has been possible to replicate the CARI methodology used to calculate the 2022 PIN. 
@@ -243,13 +246,9 @@ Applying this methodology to currently available data, yields a unionwide PIN of
 
 <br>
 
-```{r eval = FALSE}
-sum(states$PIN, na.rm = TRUE) %>% format(big.mark = ",")
 
-round(((sum(pin$fs_pin, na.rm = TRUE)) - (sum(states$PIN, na.rm = TRUE))) / (sum(pin$fs_pin, na.rm = TRUE)) * 100, digits = 2)
-
-sum(pin$fs_pin, na.rm = TRUE) %>% format(big.mark = ",")
-
+```{r}
+glimpse(states)
 ```
 
 
@@ -258,8 +257,9 @@ states %>%
   pivot_longer(cols = c(secure, 
                         marginally_secure, 
                         moderately_insecure, 
-                        severely_insecure)) %>%
-  ggplot(aes(y = value,
+                        severely_insecure)) %>% 
+  filter(value > 0) %>% 
+  ggplot(aes(y = pc_weight,
              x = fct_relevel(state, c("Rakhine", "Kayin", "Magway", "Sagaing",
                                       "Chin", "Kayah", "Shan", "Tanintharyi", 
                                       "Kachin", "Bago", "Mon", "Ayeyarwady", 
@@ -270,7 +270,7 @@ states %>%
                                   "moderately_insecure", 
                                   "severely_insecure")))) + 
   geom_col(position = position_stack()) + 
-  geom_text(aes(label = value),
+  geom_text(aes(label = pc_weight),
             position = position_stack(vjust = .5),
             size = 2) + 
   scale_fill_manual(values = c("#4DB6AC",

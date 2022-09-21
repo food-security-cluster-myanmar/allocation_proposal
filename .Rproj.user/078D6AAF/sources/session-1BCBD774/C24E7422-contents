@@ -100,9 +100,8 @@ It is my intention, with this mock-up, to provide partners with information on h
 
 I would also encourage any and all comments from all concerned parties. 
 
-<br><br><br>
-
 ## Data and references
+
 
 ### References for this report
 
@@ -176,8 +175,7 @@ states <- msna %>%
               group_by(adm_name, 
                        fcs_status, 
                        rcsi_status) %>%
-              summarise(weights = sum(weight_final), 
-                        .groups = "drop") %>%
+              summarise(weights = sum(weight_final)) %>%
               mutate(pc = weights / sum(weights)) %>%
               ungroup() %>%
               filter(fcs_status == "acceptable") %>%
