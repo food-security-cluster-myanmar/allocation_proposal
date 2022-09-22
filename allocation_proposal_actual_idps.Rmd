@@ -368,7 +368,7 @@ nat_table <- function(tbl){
     adorn_totals("row") %>%
     mutate(`%_pop` = round(PIN / population * 100, 
                            digits = 2)) %>% 
-    mutate(`%_PIN` = ifelse(township == "Total", 100, PIN)) %>% 
+    mutate(`%_PIN` = ifelse(township == "Total", 100, `%_PIN`)) %>% 
     flextable() %>% 
     set_caption("Proposed PIN breakdown by township") %>% 
     theme_zebra() %>% 

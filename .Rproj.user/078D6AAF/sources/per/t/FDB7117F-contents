@@ -1,0 +1,585 @@
+---
+title: "DRAFT State and Township PIN allocations -- PRO-RATED version"
+author: "[Myanmar Food Security Cluster](https://github.com/food-security-cluster-myanmar)"
+date: "20/09/2022"
+output: 
+  html_document:
+    code_download: true
+    theme: readable
+    toc: true
+    toc_depth: 4
+    toc_float: true
+    number_sections: false
+    collapsed: false
+always_allow_html: true   
+---
+
+```{css, echo=FALSE}
+
+#TOC::before {
+  content: "";
+  display: block;
+  height: 70px;
+  margin: 2em 20px 40px 20px;
+  background-image: url("Myanmar_cluster_blue.png");
+  background-size: contain;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+```
+
+```{=html}
+<style>
+    body .main-container {
+        max-width: 1280px;
+    }
+</style>
+```
+
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE, echo=FALSE, fig.width=8}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(scales)
+library(janitor)
+library(haven)
+library(psych)
+library(skimr)
+library(mdepriv)
+library(broom)
+library(readxl)
+library(widyr)
+library(DT)
+library(viridis)
+library(corrplot)
+library(rpart)
+library(rpart.utils)
+library(rattle)
+library(rpart.plot)
+library(randomForest)
+library(broomstick)
+library(patchwork)
+library(tidymodels)
+library(vip)
+library(glmnet)
+library(tidytext)
+library(flextable)
+library(skimr)
+library(RColorBrewer)
+library(lubridate)
+
+range01 <- function(x){(x-min(x))/(max(x)-min(x))}
+range_wna <- function(x){(x-min(x, na.rm = TRUE))/(max(x, na.rm = TRUE)-min(x, na.rm = TRUE))}
+
+mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+opts <- options(knitr.kable.NA = "")
+
+`%out%` <- Negate(`%in%`)
+
+# disabling scientific notation
+options(scipen = 999)
+
+theme_set(theme_light())
+```
+
+<br><br><br>
+
+## Introduction 
+
+This document explores what the township PIN might look like with a flat allocation, as suggested by the Global Food Security Cluster.
+
+The consultant strongly disagrees with this and finds this to be a misallocation. There is good available data and alternatives to this approach have been developed. 
+
+Still, let us explore this mock up. 
+
+<br><br><br>
+
+## Data and references
+
+
+### References for this report
+
+* ACLED, (2022). ACLED data for Myanmar (2010-2022). Retrieved from https://acleddata.com on 2022-06-06. 
+* International Food Policy Research Institute (2022). Myanmar Household Welfare Survey (MHWS), Round 1. Harvard Dataverse, doi: 10.7910/DVN/1R3F3U,. Retrieved from https://doi.org/10.7910/DVN/1R3F3U on 2022-09-01. 
+* FAO and WFP (2022). Food Security Monitoring Survey Round 3. FAO and WFP. 
+* Food Security Cluster Myanmar (2022). Township Prioritisation. https://food-security-cluster-myanmar.github.io/mmr_township_prioritisation/. 
+* Food Security Cluster, Myanmar (2022). Understanding Conflict Dynamics in Myanmar through Conflict and Incident Data: A Food Security Perspective. https://food-security-cluster-myanmar.github.io/exploratory-data-analysis-acled-fsc/.
+* HARP-F and MIMU (2018). Vulnerability in Myanmar: A Secondary Data Review of Needs, Coverage and Gaps. http://themimu.info/vulnerability-in-myanmar.
+* REACH (2022). Myanmar Multi-sector Needs Assessment. REACH. 
+
+
+```{r datasets, message=FALSE, warning=FALSE}
+pcodes <- read_excel("./data/Myanmar PCodes Release_9.3_Jan2021_(StRgn_Dist_Tsp_Town_Ward_VT).xlsx",
+                     sheet = "03_Township") 
+
+conflict_score <-  read_csv("./data/conflict_score_20220920.csv") 
+
+pin <- read_csv("./data/fs_pin.csv") 
+
+survey <- read_csv("./data/survey3.csv") %>% 
+  mutate(rcsi = 
+           r_csi_less_qlty * 1 + 
+           r_csi_borrow * 2 + 
+           r_csi_meal_nb * 1 + 
+           r_csi_meal_size * 1 + 
+           r_csi_meal_adult * 3, 
+         rcsi_range = range_wna(rcsi))
+
+msna <- read_csv("./data/msna.csv")
+
+idps <- read_csv("./data/idps.csv") %>% 
+  clean_names() %>% 
+  filter(township != "Hlaingthayra (West)") %>% 
+  mutate(township = recode(township, 
+                           "Hlaingthayra (Eastt)" = "Hlaingtharya"), 
+         population = ifelse(township == "Hlaingtharya", 
+                             618275.809 + 201609.894, 
+                             population))
+
+r4 <- read_csv("./data/round4_summary.csv") %>% 
+  mutate(state = recode(state, 
+                        "Ayeyawady" = "Ayeyarwady"))
+
+```
+
+<br>
+
+Additionally, the draft township-level PINs have been read into a simplet dataset [here](https://github.com/food-security-cluster-myanmar/allocation_proposal/raw/main/data/draft_pin_dataset.xlsx) for easy comparison and comsumption. 
+
+
+<br><br><br>
+
+
+## State and Region PINs
+
+
+
+Using the food consumption scores from the MSNA and the reduced coping strategies index from the FAO/WFP Survey Round 3, it has been possible to replicate the CARI methodology used to calculate the 2022 PIN. 
+
+Below is an explanatory chart where how each of the food consumption and coping strategies indicators relate to the 4 CARI domains. 
+
+![](./img/cari.png)
+
+```{r eval = FALSE}
+nat %>% summarise_at("PIN", sum)
+
+
+(15567328 - 13230378) / 15567328
+```
+
+
+Applying this methodology to currently available data, yields a unionwide PIN of 15,567,328. This is the total number of persons who are moderately and severely food insecure. This is a 15% increase from the 2022 PIN of 13,230,378. 
+
+IDP figures are the Q3 actuals provided by OCHA. 
+
+<br>
+
+```{r warning=FALSE, fig.width=9}
+r4 %>% 
+  filter(state != "Nay Pyi Taw") %>% 
+  mutate_at(vars(food_secure:insecure_pc),
+            ~ as.double(str_remove_all(.x, "\\%"))) %>% 
+  pivot_longer(cols = c(food_secure:severely_insecure)) %>% 
+  ggplot(aes(y = value,
+             x = fct_relevel(state, c("Chin", "Rakhine", "Kayah", "Magway", 
+                                      "Kayin", "Kachin", "Bago", "Mon", "Sagaing", 
+                                      "Tanintharyi", "Yangon", "Shan", "Ayeyarwady", 
+                                      "Mandalay")), 
+             fill = fct_relevel(name, 
+                                c("food_secure", 
+                                  "marginally_secure", 
+                                  "moderately_insecure", 
+                                  "severely_insecure"))))  +
+  geom_col(position = position_stack()) + 
+  geom_text(aes(label = value), 
+            position = position_stack(vjust = .5),
+            size = 2) + 
+  scale_fill_manual(values = c("#4DB6AC",
+                               "#80CBC4", 
+                               "#F57F17", 
+                               "#BF360C")) + 
+  labs(fill = "", 
+       x = "", 
+       y = "Percentage of population", 
+       title = "CARI domains by state", 
+       subtitle = "FAO/WFP Round 4") +
+  theme(legend.text = element_text(size = 5), 
+        axis.text.x = element_text(angle = 60, 
+                                   hjust = 1,
+                                   vjust = 1))
+
+```
+<br>
+
+
+Presented as a table: 
+
+<br>
+
+
+
+```{r}
+r4 %>% 
+  select(state, 
+         population, 
+         `moderately insecure persons` = moderately_persons, 
+         `severely insecure persons` = severely_persons, 
+         `all food insecure` = insecure_persons, 
+         ) %>% 
+  left_join(idps %>% 
+               mutate(state = recode(state, 
+                        "Bago (East)" = "Bago", 
+                        "Bago (West)" = "Bago", 
+                        "Shan (North)" = "Shan", 
+                        "Shan (East)" = "Shan", 
+                        "Shan (South)" = "Shan")) %>% 
+              group_by(state) %>% 
+              
+              summarise(IDPs = sum(id_ps, na.rm = TRUE)), 
+            by = "state") %>% 
+  mutate(PIN = `all food insecure` + IDPs) %>% 
+  arrange(desc(PIN)) %>% 
+  adorn_totals("row") %>%
+  mutate(`%_pop` = round(PIN / population * 100, 
+                         digits = 2))%>%
+    flextable() %>% 
+  set_caption("FAO/WFP Round 4 PIN estimates") %>% 
+  theme_zebra()
+```
+
+
+
+<br><br><br>
+
+
+
+
+## Township PINs
+
+Township PINs were based on state/region PINs and pro-rated according to their population size. This approach will lead to frequent misallocations. 
+
+Additionally, this PIN breakdown is not justifiable. If we showed this breakdown to a person from each state, we would be accused of not understanding the context and not taking allocation seriously. 
+
+
+```{r}
+nat <- pin %>% 
+  mutate(state = recode(state, 
+                        "Bago (East)" = "Bago", 
+                        "Bago (West)" = "Bago", 
+                        "Shan (North)" = "Shan", 
+                        "Shan (East)" = "Shan", 
+                        "Shan (South)" = "Shan")) %>%
+  left_join(idps %>% 
+              select(admin3_pcode = township_pcode, 
+                     IDPs = id_ps, 
+                     population), 
+            by = "admin3_pcode") %>% 
+  left_join(r4 %>% select(state, 
+                          insecure_pc, 
+                          insecure_persons), 
+            by = "state")  %>% 
+  select(state, township, 
+         vul_score = mdp_adjust, 
+         conflict_score, 
+         insecure_pc,
+         insecure_persons, 
+         IDPs, 
+         population, 
+         admin3_pcode) %>% 
+  mutate(population = ifelse(township == "Hlaingtharya", 
+                                 819886, population)) %>% 
+  replace_na(list(IDPs = 0)) %>% 
+  mutate_at(vars(insecure_pc),
+            ~ as.double(str_remove_all(.x, "\\%"))) %>% 
+  mutate_at(vars(conflict_score, vul_score), 
+            ~ range_wna(scale(.))) %>% 
+  mutate(conflict_affected = conflict_score * population, 
+         pre_ex_vulnerable = vul_score * population) %>% 
+  mutate(vul_pop = pmax(vul_score *  population, conflict_score * population, na.rm = TRUE), 
+         vul_pop_score = pmax(vul_score, conflict_score, na.rm = TRUE), 
+         caseload = vul_pop + IDPs) %>% 
+  group_by(state) %>% 
+  mutate(caseload_pc = caseload / sum(caseload, na.rm = TRUE), 
+         PIN = population / sum(population) * insecure_persons + IDPs, 
+         pc_pin = PIN / sum(PIN, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(pc_pop = PIN / population) %>% 
+  do.call(data.frame, .) %>% 
+  as_tibble()
+  
+  
+```
+
+
+```{r}
+nat_table <- function(tbl){
+  tbl %>% 
+  mutate_at(vars(vul_score, conflict_score, 
+                 vul_pop_score, caseload_pc, 
+                 pc_pin, pc_pop), 
+            ~ round(.x * 100, digits = 2)) %>% 
+  mutate_at(vars(insecure_persons, IDPs, population, 
+                 vul_pop, caseload, PIN, 
+                 conflict_affected, 
+                 pre_ex_vulnerable), 
+            ~ round(.x)) %>% 
+  select(township, 
+         population, 
+         `conflict score` = conflict_score,
+         `conflict affected` = conflict_affected,
+         `vulnerability score` = vul_score, 
+         `pre-ex vulnerable` = pre_ex_vulnerable, 
+         IDPs, 
+         PIN 
+         ) %>%
+    mutate(`%_PIN` = round(PIN / sum(PIN) * 100, 
+                           digits = 2)) %>% 
+    arrange(desc(PIN)) %>% 
+    adorn_totals("row") %>%
+    mutate(`%_pop` = round(PIN / population * 100, 
+                           digits = 2)) %>% 
+    mutate(`%_PIN` = ifelse(township == "Total", 100, `%_PIN`)) %>% 
+    flextable() %>% 
+    set_caption("Proposed PIN breakdown by township") %>% 
+    theme_zebra() %>% 
+    fontsize(size = 10, part = "all")  
+    
+}
+
+```
+
+<br><br>
+
+### Ayeyarwady 
+
+Hinthada having the second-highest PIN is not commonsensical. It is a port city and one of the least vulnerable and least conflict-affected townships in the region. This should be redistributed to Labutta, Pyapon and Mawlamyinegyun. Or townships allocations can just be performed by using the conflict score and the vulnerability score. 
+
+
+```{r}
+nat %>%
+  filter(state == "Ayeyarwady") %>%
+  nat_table()
+
+```
+
+<br><br>
+
+### Bago
+
+Kyaukkyi, with the lion's share of IDPs in the state is ranked really lowly as the conflict score was not considered. Ranked second is Taungoo, the richest part of Bago. This is Taungoo: 
+
+![](./img/taungoo.jpg)
+
+<br>
+
+```{r}
+nat %>% 
+  filter(state == "Bago") %>% 
+  nat_table()
+  
+```
+
+<br><br>
+
+### Chin 
+
+Chin state is mostly fine. 
+
+```{r}
+nat %>% 
+  filter(state == "Chin") %>% 
+  nat_table()
+```
+
+
+<br><br>
+ 
+### Kachin
+
+A bit of shuffling around but results not entirely dissimilar from PIN calculated by conflict score and vulnerability. However, the PIN for Waingmaw is far too low. In general, all these PINs are a bit low. 
+
+```{r}
+nat %>% 
+  filter(state == "Kachin") %>% 
+  nat_table()
+```
+
+<br><br>
+
+### Kayah 
+
+Demoso, Loikaw and Hpruso are the most vulnerable areas. However, the PINs are for these areas are a bit low. 
+
+<br>
+
+```{r}
+nat %>% 
+  filter(state == "Kayah") %>% 
+  nat_table()
+
+```
+
+<br><br>
+
+### Kayin
+
+Myawaddy is ranked really lowly, considering it's conflict score and number of IDPs. 
+
+<br> 
+
+```{r}
+nat %>% 
+  filter(state == "Kayin") %>% 
+  nat_table()
+```
+
+
+<br><br>
+
+### Magway
+
+Gangaw is ranked fifth in the whole country in terms of conflict events and fatalities, just behind Kale, Demoso, Pale and Yinmarbin. it also host the most IDPs in all of Magway. It's low ranking in the list below is not commonsensical. 
+
+<br>
+
+```{r}
+nat %>% 
+  filter(state == "Magway") %>% 
+  nat_table()
+```
+
+<br><br>
+
+### Mandalay
+
+Meiktila is neither a priority for humanitarian action or development interventions. The townships with the largest PINs in Mandalay are mostly from the affluent downtown core, like Aungmyathazan and Chanmyathazi. For reference, this is Chanmyathazi: 
+
+![](./img/chanmyathazi.jpg)
+
+<br>
+
+```{r}
+nat %>% 
+  filter(state == "Mandalay") %>% 
+  nat_table()
+```
+
+
+<br><br>
+
+### Mon
+
+Mawlamyine is merely the largest city. it is also, by far and away, the most affluent area in Mon. Thaton, Bilin and Kyaikmaraw, all areas of high-conflict and of extreme humanitarian interest, all fall far too low in the list. 
+
+<br>
+
+```{r}
+nat %>% 
+  filter(state == "Mon") %>% 
+  nat_table()
+```
+
+<br><br>
+
+### Nay Pyi Taw
+
+Nay Pyi Taw has no targets and was not surveyed in the FAO/WFP survey or the MSNA. It was, however, included in IFPRI. The government does not appreciate humanitarian interventions targeted at Nay Pyi Taw residents.
+
+<br>
+
+```{r}
+nat %>% 
+  filter(state == "Nay Pyi Taw") %>% 
+  nat_table()
+```
+
+
+<br><br>
+
+### Rakhine
+
+This is not a bad list -- it gives precedence to Mrauk-U, Kyauktaw and Pauktaw, which are all extremely poor. Though these areas are rarely the focus of humanitarian intercventions. 
+
+```{r}
+nat %>% 
+  filter(state == "Rakhine") %>% 
+  nat_table()
+```
+
+<br><br>
+
+### Sagaing
+
+The Sagaing results are bizarre -- Kale has the most conflict events and fatalities in the country by a wide margin, yet here it is outranked in every respect by Pale, which is smaller than it and has less conflict. Pale's figures are pushed up the IDP population. 
+
+<br>
+
+
+```{r}
+nat %>% 
+  filter(state == "Sagaing") %>% 
+  nat_table()
+```
+
+
+<br><br>
+
+### Shan 
+
+Taunggyi is the richest city in the entire area. It also does not house that many IDPs. It should not be ranked first in terms of the PIN. It is also unjustifiable that Taunggyi has a larger proportion of its population in the PIN than places like Mongton or Mongping. 
+<br>
+
+
+```{r}
+nat %>% 
+  filter(state == "Shan") %>% 
+  nat_table()
+```
+
+
+<br><br>
+
+### Tanintharyi
+
+The high conflict score in Sittwe is primarily due to the massive presence of IDPs there. Together, Sittwe, 
+
+
+```{r}
+nat %>% 
+  filter(state == "Tanintharyi") %>% 
+  nat_table()
+```
+
+
+
+<br><br>
+
+### Yangon
+
+It is inconceivable that Dagon Myothit would have a PIN of 109,269. Areas that are much poorer, such as Taikkyi should have a higher PIN than this peri-urban industrial township. Shwepyithar, ranked third, is an up-and-coming township full of hotels and shopping centres, though it also has many industrial areas. I believe Bogyoke Market is also in Shwepyithar. 
+
+<br>
+
+```{r}
+nat %>% 
+  filter(state == "Yangon") %>% 
+  nat_table()
+
+```
+
+<br><br>
+
+### Limitations of the township PINs
+
+So far, the prioritisation exercise has bee fairly agnostic about conflict vs. pre-existing vulnerability, counting the higher of the two figures as the caseload for each township. Were a strategic decision to be made to change to focus only to conflict-affected areas, then these allocations should shift substantially. 
+
+```{r eval = FALSE}
+nat %>% 
+  write_csv("./data/draft_pin_dataset.csv")
+```
+
