@@ -1,0 +1,15 @@
+"0","nat %>% 
+  mutate_at(vars(`population 2021`,  
+                   conflict_affected, 
+                   vulnerable, 
+                   tsp_moderate, 
+                   tsp_severe), 
+               ~ round(.x, digits = 0)) %>% 
+    mutate(pc_insecure = round((tsp_moderate + tsp_severe) / population * 100,
+                               digits = 2))
+"
+"2","Error: Problem with `mutate()` column `pc_insecure`.
+[34mi[39m `pc_insecure = round((tsp_moderate + tsp_severe)/population * 100, digits = 2)`.
+[31mx[39m non-numeric argument to binary operator
+[90mRun `rlang::last_error()` to see where the error occurred.[39m
+"

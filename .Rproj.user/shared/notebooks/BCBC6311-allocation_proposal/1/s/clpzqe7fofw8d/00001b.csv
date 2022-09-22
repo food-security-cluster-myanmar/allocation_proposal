@@ -1,0 +1,31 @@
+"0","states %>% 
+  filter(!is.na(domain)) %>% 
+  select(state, domain, final_weight) %>% 
+  pivot_wider(names_from = domain, 
+              values_from = final_weight, 
+              values_fill = 0) %>% 
+  mutate(insecure = moderately_insecure + severely_insecure, 
+         food_secure = secure + marginally_secure, 
+         pc = insecure / (food_secure + insecure)) %>% 
+  arrange(desc(pc)) %>% pull(state)
+"
+"1"," [1]"
+"1"," ""Kayah""      "
+"1"," ""Chin""       "
+"1"," ""Magway""     "
+"1"," ""Shan""       "
+"1"," ""Kayin""      "
+"1"," ""Rakhine""    "
+"1"," ""Mon""        "
+"1","
+"
+"1"," [8]"
+"1"," ""Mandalay""   "
+"1"," ""Ayeyarwady"" "
+"1"," ""Tanintharyi"""
+"1"," ""Yangon""     "
+"1"," ""Kachin""     "
+"1"," ""Sagaing""    "
+"1"," ""Bago""       "
+"1","
+"

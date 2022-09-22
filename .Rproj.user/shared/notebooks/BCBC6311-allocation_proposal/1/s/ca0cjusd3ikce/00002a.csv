@@ -1,0 +1,12 @@
+"0","states %>% 
+  filter(!is.na(domain)) %>% 
+  group_by(state, domain) %>% 
+  summarise(population = max(population), 
+            breakdown = sum(breakdown)) %>% 
+  pivot_wider(names_from = domain, 
+              values_from = breakdown, 
+              values_fill = 0) %>% 
+  mutate(pin = moderately_insecure + severely_insecure)
+"
+"2","`summarise()` has grouped output by 'state'. You can override using the `.groups` argument.
+"
