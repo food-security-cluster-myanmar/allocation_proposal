@@ -99,6 +99,8 @@ It is my intention, with this mock-up, to provide partners with information on h
 
 I would also encourage any and all comments from all concerned parties. 
 
+<br><br><br>
+
 ## Data and references
 
 
@@ -130,11 +132,16 @@ survey <- read_csv("./data/survey3.csv") %>%
            r_csi_meal_adult * 3, 
          rcsi_range = range_wna(rcsi))
 
-pin <- read_csv("./data/fs_pin.csv")
-
 msna <- read_csv("./data/msna.csv")
 
-idps <- read_csv("./data/idp_proj.csv") %>% clean_names()
+idps <- read_csv("./data/idp_proj.csv") %>% 
+  clean_names() %>% 
+  filter(township != "Hlaingthayra (West)") %>% 
+  mutate(township = recode(township, 
+                           "Hlaingthayra (Eastt)" = "Hlaingtharya"), 
+         population = ifelse(township == "Hlaingtharya", 
+                             618275.809 + 201609.894, 
+                             population))
 
 r4 <- read_csv("./data/round4_summary.csv") %>% 
   mutate(state = recode(state, 
@@ -150,10 +157,29 @@ Additionally, the draft township-level PINs have been read into a simplet datase
 <br><br><br>
 
 
-
 ## State and Region PINs
 
-```{r}
+
+
+Using the food consumption scores from the MSNA and the reduced coping strategies index from the FAO/WFP Survey Round 3, it has been possible to replicate the CARI methodology used to calculate the 2022 PIN. 
+
+Below is an explanatory chart where how each of the food consumption and coping strategies indicators relate to the 4 CARI domains. 
+
+![](./img/cari.png)
+
+```{r eval = FALSE}
+nat %>% summarise_at("PIN", sum)
+
+
+(16961605 - 13230378) / 16961605
+```
+
+
+Applying this methodology to currently available data, yields a unionwide PIN of 16,961,605. This is the total number of persons who are moderately and severely food insecure. This is a 22% increase from the 2022 PIN of 13,230,378. 
+
+<br>
+
+```{r warning=FALSE}
 r4 %>% 
   filter(state != "Nay Pyi Taw") %>% 
   mutate_at(vars(food_secure:insecure_pc),
@@ -162,8 +188,8 @@ r4 %>%
   ggplot(aes(y = value,
              x = fct_relevel(state, c("Chin", "Rakhine", "Kayah", "Magway", 
                                       "Kayin", "Kachin", "Bago", "Mon", "Sagaing", 
-                                      "Tanintharyi", "Yangon", "Shan", "Ayeyawady", 
-                                      "Mandalay" )), 
+                                      "Tanintharyi", "Yangon", "Shan", "Ayeyarwady", 
+                                      "Mandalay")), 
              fill = fct_relevel(name, 
                                 c("food_secure", 
                                   "marginally_secure", 
@@ -190,24 +216,11 @@ r4 %>%
 ```
 <br>
 
-presented as a table: 
-
-
-
-
-
-Using the food consumption scores from the MSNA and the reduced coping strategies index from the FAO/WFP Survey Round 3, it has been possible to replicate the CARI methodology used to calculate the 2022 PIN. 
-
-Below is an explanatory chart where how each of the food consumption and coping strategies indicators relate to the 4 CARI domains. 
-
-![](./img/cari.png)
-
-
-Applying this methodology to currently available data, yields a unionwide PIN of 15,511,655. This is the total number of persons who are moderately and severely food insecure. This is a 18% decrease from the 2022 PIN of 13,230, 378. 
 
 Presented as a table: 
 
 <br>
+
 
 
 ```{r}
@@ -291,18 +304,23 @@ nat <- pin %>%
                         "Shan (South)" = "Shan")) %>%
   left_join(idps %>% 
               select(admin3_pcode = township_pcode, 
-                     IDPs = id_ps_projection, population), 
+                     IDPs = id_ps_projection, 
+                     population), 
             by = "admin3_pcode") %>% 
   left_join(r4 %>% select(state, 
                           insecure_pc, 
                           insecure_persons), 
-            by = "state") %>% 
+            by = "state")  %>% 
   select(state, township, 
          vul_score = mdp_adjust, 
          conflict_score, 
          insecure_pc, insecure_persons, 
          IDPs, 
-         population) %>% 
+         population, 
+         admin3_pcode) %>% 
+  mutate(population = ifelse(township == "Hlaingtharya", 
+                                 819886, population)) %>% 
+  replace_na(list(IDPs = 0)) %>% 
   mutate_at(vars(insecure_pc),
             ~ as.double(str_remove_all(.x, "\\%"))) %>% 
   mutate_at(vars(conflict_score, vul_score), 
@@ -310,18 +328,19 @@ nat <- pin %>%
   mutate(conflict_affected = conflict_score * population, 
          pre_ex_vulnerable = vul_score * population) %>% 
   mutate(vul_pop = pmax(vul_score *  population, conflict_score * population, na.rm = TRUE), 
-         vul_pop_score = pmax(vul_score, conflict_score), 
+         vul_pop_score = pmax(vul_score, conflict_score, na.rm = TRUE), 
          caseload = vul_pop + IDPs) %>% 
   group_by(state) %>% 
   mutate(caseload_pc = caseload / sum(caseload, na.rm = TRUE), 
-         PIN = caseload_pc * insecure_persons, 
+         PIN = caseload_pc * insecure_persons + IDPs, 
          pc_pin = PIN / sum(PIN, na.rm = TRUE)) %>% 
   ungroup() %>% 
-  mutate(pc_pop = PIN / population)
+  mutate(pc_pop = PIN / population) %>% 
+  do.call(data.frame, .) %>% 
+  as_tibble()
   
   
 ```
-
 
 
 ```{r}
@@ -346,6 +365,8 @@ nat_table <- function(tbl){
          PIN, 
          `%_PIN` = pc_pin
          ) %>%
+    mutate(`%_pop` = round(PIN / population * 100, 
+                           digits = 2)) %>% 
     arrange(desc(PIN)) %>% 
     adorn_totals("row") %>%
     flextable() %>% 
@@ -353,6 +374,7 @@ nat_table <- function(tbl){
     theme_zebra() %>% 
     fontsize(size = 10, part = "all")
 }
+
 ```
 
 <br><br>
@@ -520,7 +542,7 @@ nat %>%
 
 <br><br>
 
-### Tnaintharyi
+### Tanintharyi
 
 The high conflict score in Sittwe is primarily due to the massive presence of IDPs there. Together, Sittwe, 
 
@@ -532,7 +554,6 @@ nat %>%
 ```
 
 
-<br><br>
 
 <br><br>
 
@@ -546,16 +567,19 @@ The calculated PIN for Yangon in 2023 is a modest 39,705 persons. This is comple
 nat %>% 
   filter(state == "Yangon") %>% 
   nat_table()
+
 ```
 
 <br><br>
 
 ### Limitations of the township PINs
 
-So far, the prioritisation exercise has bee fairly agnostics about conflict vs. pre-existing vulnerability, counting the higher of the two figures as the caseload for each township. Were a strategic decision to be made to change to focus only to conflict-affected areas, then these allocations should shift substantially. 
+So far, the prioritisation exercise has bee fairly agnostic about conflict vs. pre-existing vulnerability, counting the higher of the two figures as the caseload for each township. Were a strategic decision to be made to change to focus only to conflict-affected areas, then these allocations should shift substantially. 
 
 ```{r eval = FALSE}
-nat %>%
+nat %>% 
   write_csv("./data/draft_pin_dataset.csv")
 ```
+
+
 

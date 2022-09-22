@@ -15,7 +15,7 @@
         "Source": "Source",
         "cursorPosition": "218,0",
         "scrollLine": "0",
-        "last_setup_crc32": "",
+        "last_setup_crc32": "51534D4A3c020952",
         "docOutlineSize": "130",
         "docOutlineVisible": "1"
     },
@@ -24,7 +24,7 @@
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1663816356957,
+    "last_content_update": 1663821284568,
     "read_only": false,
     "read_only_alternatives": []
 }
