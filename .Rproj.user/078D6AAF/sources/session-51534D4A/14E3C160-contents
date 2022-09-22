@@ -134,7 +134,7 @@ survey <- read_csv("./data/survey3.csv") %>%
 
 msna <- read_csv("./data/msna.csv")
 
-idps <- read_csv("./data/idp_proj.csv") %>% 
+idps <- read_csv("./data/idps.csv") %>% 
   clean_names() %>% 
   filter(township != "Hlaingthayra (West)") %>% 
   mutate(township = recode(township, 

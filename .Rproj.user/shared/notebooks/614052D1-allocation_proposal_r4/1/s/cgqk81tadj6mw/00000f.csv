@@ -1,0 +1,12 @@
+"0","    arrange(desc(PIN)) %>% 
+    adorn_totals(""row"") %>%
+    mutate(`%_pop` = round(PIN / population * 100, 
+                           digits = 2)) %>% 
+    mutate(`%_PIN` = ifelse(township == ""Total"", 100, PIN)) %>% 
+    flextable() %>% 
+    set_caption(""Proposed PIN breakdown by township"") %>% 
+    theme_zebra() %>% 
+    fontsize(size = 10, part = ""all"")
+"
+"2","Error in desc(PIN) : object 'PIN' not found
+"
