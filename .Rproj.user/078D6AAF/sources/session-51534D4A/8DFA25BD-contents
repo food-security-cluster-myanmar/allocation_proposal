@@ -179,7 +179,7 @@ Applying this methodology to currently available data, yields a unionwide PIN of
 
 <br>
 
-```{r warning=FALSE}
+```{r warning=FALSE, fig.width=9}
 r4 %>% 
   filter(state != "Nay Pyi Taw") %>% 
   mutate_at(vars(food_secure:insecure_pc),
