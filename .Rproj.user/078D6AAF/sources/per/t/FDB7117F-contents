@@ -298,11 +298,6 @@ nat <- pin %>%
             ~ as.double(str_remove_all(.x, "\\%"))) %>% 
   mutate_at(vars(conflict_score, vul_score), 
             ~ range_wna(scale(.))) %>% 
-  mutate(conflict_affected = conflict_score * population, 
-         pre_ex_vulnerable = vul_score * population) %>% 
-  mutate(vul_pop = pmax(vul_score *  population, conflict_score * population, na.rm = TRUE), 
-         vul_pop_score = pmax(vul_score, conflict_score, na.rm = TRUE), 
-         caseload = vul_pop + IDPs) %>% 
   group_by(state) %>% 
   mutate(caseload_pc = caseload / sum(caseload, na.rm = TRUE), 
          PIN = population / sum(population) * insecure_persons + IDPs, 
@@ -311,8 +306,8 @@ nat <- pin %>%
   mutate(pc_pop = PIN / population) %>% 
   do.call(data.frame, .) %>% 
   as_tibble()
-  
-  
+
+
 ```
 
 
@@ -331,9 +326,7 @@ nat_table <- function(tbl){
   select(township, 
          population, 
          `conflict score` = conflict_score,
-         `conflict affected` = conflict_affected,
          `vulnerability score` = vul_score, 
-         `pre-ex vulnerable` = pre_ex_vulnerable, 
          IDPs, 
          PIN 
          ) %>%
@@ -428,7 +421,7 @@ nat %>%
 
 ### Kayin
 
-Myawaddy is ranked really lowly, considering it's conflict score and number of IDPs. 
+Myawaddy is ranked really lowly, considering its conflict score and number of IDPs. 
 
 <br> 
 
@@ -443,7 +436,7 @@ nat %>%
 
 ### Magway
 
-Gangaw is ranked fifth in the whole country in terms of conflict events and fatalities, just behind Kale, Demoso, Pale and Yinmarbin. it also host the most IDPs in all of Magway. It's low ranking in the list below is not commonsensical. 
+Gangaw is ranked fifth in the whole country in terms of conflict events and fatalities, just behind Kale, Demoso, Pale and Yinmarbin. it also hosts the most IDPs in all of Magway. It doesn't make sense for it be ranked more lowly than Magway township.  
 
 <br>
 
@@ -546,7 +539,7 @@ nat %>%
 
 ### Tanintharyi
 
-The high conflict score in Sittwe is primarily due to the massive presence of IDPs there. Together, Sittwe, 
+Myeik is just the largest city in Tanintharyi. 
 
 
 ```{r}
@@ -561,7 +554,7 @@ nat %>%
 
 ### Yangon
 
-It is inconceivable that Dagon Myothit would have a PIN of 109,269. Areas that are much poorer, such as Taikkyi should have a higher PIN than this peri-urban industrial township. Shwepyithar, ranked third, is an up-and-coming township full of hotels and shopping centres, though it also has many industrial areas. I believe Bogyoke Market is also in Shwepyithar. 
+It is inconceivable that Dagon Myothit would have a PIN of 109,269. Areas that are much poorer, such as Taikkyi should have a higher PIN than this peri-urban industrial township. Shwepyithar, ranked third, is an up-and-coming township full of hotels and shopping centres, though it also has many industrial areas. I believe Bogyoke Market is also in Shwepyithar. Insein township includes numerous government headquarters, major hospitals and office complexes. 
 
 <br>
 

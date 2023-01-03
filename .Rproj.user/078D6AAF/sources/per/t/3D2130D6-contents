@@ -1,6 +1,6 @@
 ---
 title: "DRAFT State and Township PIN allocations"
-author: "[Myanmar Food Security Cluster](https://github.com/food-security-cluster-myanmar)"
+author: "[Myanmar Food Security Cluster](https://food-security-cluster-myanmar.github.io/)"
 date: "20/09/2022"
 output: 
   html_document:
@@ -154,6 +154,24 @@ Additionally, the draft township-level PINs have been read into a simplet datase
 
 
 ## State and Region PINs
+
+
+```{r}
+sub <- read_excel("./data/MMR 2023 HPC - FSC PiN 2022 - for submission.xlsx") %>% 
+  clean_names() %>% 
+  filter(!is.na(state_region))
+
+sub %>%
+  mutate(pin = total_pi_n_2022, 
+         population = parse_number(population_2022_projected)) %>% 
+  group_by(state_region) %>% 
+  mutate(pc_pin = pin / sum(pin, na.rm = TRUE), 
+         pc_pop = population / sum(population, na.rm =TRUE)) %>% 
+  filter(state_region == "Ayeyarwady") %>% 
+  select(township, pin, pc_pin, population, pc_pop) 
+  
+  glimpse()
+```
 
 
 
@@ -325,18 +343,18 @@ nat <- pin %>%
             ~ range_wna(scale(.))) %>% 
   mutate(conflict_affected = conflict_score * population, 
          pre_ex_vulnerable = vul_score * population) %>% 
-  mutate(vul_pop = pmax(vul_score *  population, conflict_score * population, na.rm = TRUE), 
-         vul_pop_score = pmax(vul_score, conflict_score, na.rm = TRUE), 
-         caseload = vul_pop + IDPs) %>% 
+  mutate(vul_pop_score = pmax(vul_score, conflict_score, na.rm = TRUE),
+         vul_pop = vul_pop_score * population) %>% 
   group_by(state) %>% 
-  mutate(caseload_pc = caseload / sum(caseload, na.rm = TRUE), 
-         PIN = caseload_pc * insecure_persons + IDPs, 
+  mutate(vul_pop_pc = vul_pop / sum(vul_pop, na.rm = TRUE), 
+         PIN = vul_pop_pc * insecure_persons + IDPs, 
          pc_pin = PIN / sum(PIN, na.rm = TRUE)) %>% 
   ungroup() %>% 
   mutate(pc_pop = PIN / population) %>% 
   do.call(data.frame, .) %>% 
   as_tibble()
   
+
   
 ```
 
@@ -345,11 +363,11 @@ nat <- pin %>%
 nat_table <- function(tbl){
   tbl %>% 
   mutate_at(vars(vul_score, conflict_score, 
-                 vul_pop_score, caseload_pc, 
+                 vul_pop_score, 
                  pc_pin, pc_pop), 
             ~ round(.x * 100, digits = 2)) %>% 
   mutate_at(vars(insecure_persons, IDPs, population, 
-                 vul_pop, caseload, PIN, 
+                 vul_pop, PIN, 
                  conflict_affected, 
                  pre_ex_vulnerable), 
             ~ round(.x)) %>% 
@@ -486,9 +504,7 @@ nat %>%
 
 ### Nay Pyi Taw
 
-Nay Pyi Taw has no targets and was not surveyed in the FAO/WFP survey or the MSNA. It was, however, included in IFPRI. 
-
-However, Nay Pyi Taw has no targets as it is the capital and a Tatmadaw stronghold. Additionally, the government does not appreciate humanitarian interventions targeted at Nay Pyi Taw residents. 
+Nay Pyi Taw has no targets and was not surveyed in the FAO/WFP survey or the MSNA. It was, however, included in IFPRI. Additionally, the government does not appreciate humanitarian interventions targeted at Nay Pyi Taw residents. 
 
 ```{r}
 nat %>% 
@@ -501,7 +517,7 @@ nat %>%
 
 ### Rakhine
 
-The high conflict score in Sittwe is primarily due to the massive presence of IDPs there. However, the oeveral PIN for Sittwe is brought down by the relatively lower proportions of the township that are food insecure. 
+The high conflict score in Sittwe is primarily due to the massive presence of IDPs there. 
 
 ```{r}
 nat %>% 
@@ -513,7 +529,7 @@ nat %>%
 
 ### Sagaing
 
-Sagaing is similar to Kayin in that, in the majority of townships, the numbers of conflict-affected persons are much higher the numbers of persons with pre-existing vulnerability. 
+Sagaing is similar to Kayin in that, in the majority of townships, the numbers of conflict-affected persons are much higher the numbers of persons with pre-existing vulnerability. More than 900 fatalities have been recorded in Kale alone since the coup. 
 
 <br>
 
@@ -529,7 +545,7 @@ nat %>%
 
 ### Shan 
 
-Similar to Bago, the sampling of the FAO/WFP survey is insufficiently detailed to break down results acrros Shan North, Shan East and Shan South. Their townhips have all been combined into one long table below. 
+Similar to Bago, the sampling of the FAO/WFP survey is insufficiently detailed to break down results across Shan North, Shan East and Shan South. Their townhips have all been combined into one long table below. 
 
 <br>
 
@@ -545,8 +561,7 @@ nat %>%
 
 ### Tanintharyi
 
-The high conflict score in Sittwe is primarily due to the massive presence of IDPs there. Together, Sittwe, 
-
+I think Kyunsu is an island off the mainland of Myanmar. Its remoteness helps explain its high vulnerability score. Myeik has a large population, which accounts for its high rank, but only 18.5% of its population is in the PIN, the lowest in the state. 
 
 ```{r}
 nat %>% 
@@ -560,7 +575,8 @@ nat %>%
 
 ### Yangon
 
-The calculated PIN for Yangon in 2023 is a modest 39,705 persons. This is completely in line with the worsening and more urgent needs in other parts of the country. It is also highly-suggested that urban programming, private-sector collaboration and market interventions be used in urban areas. 
+Yangon has a large PIN -- 2,169,057, but this line
+This is completely in line with the worsening and more urgent needs in other parts of the country. It is also highly-suggested that urban programming, private-sector collaboration and market interventions be used in urban areas. 
 
 <br>
 
@@ -579,7 +595,7 @@ So far, the prioritisation exercise has bee fairly agnostic about conflict vs. p
 
 ```{r eval = FALSE}
 nat %>% 
-  write_csv("./data/draft_pin_dataset.csv")
+  write_csv("./data/draft_pin_datasect_conflict_vulnerability.csv")
 ```
 
 

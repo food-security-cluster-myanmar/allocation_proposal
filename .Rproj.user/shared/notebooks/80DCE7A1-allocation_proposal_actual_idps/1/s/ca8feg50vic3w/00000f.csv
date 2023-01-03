@@ -1,6 +1,0 @@
-"0","nat %>% 
-  write_csv(""./data/draft_pin_dataset.csv"")
-"
-"2","Error: Cannot open file for writing:
-* 'C:\Users\seanywng\Documents\R\allocation_proposal\data\draft_pin_dataset.csv'
-"

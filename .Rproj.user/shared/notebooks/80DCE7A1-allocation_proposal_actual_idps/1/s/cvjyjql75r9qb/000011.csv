@@ -1,9 +1,0 @@
-"0","idps %>% 
-              select(admin3_pcode = township_pcode, 
-                     IDPs = id_ps, 
-                     population)
-"
-"2","Error: Can't subset columns that don't exist.
-[31mx[39m Column `id_ps` doesn't exist.
-[90mRun `rlang::last_error()` to see where the error occurred.[39m
-"

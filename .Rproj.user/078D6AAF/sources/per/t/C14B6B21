@@ -1,0 +1,27 @@
+{
+    "id": "C14B6B21",
+    "path": "~/R/allocation_proposal/allocation_average.Rmd",
+    "project_path": "allocation_average.Rmd",
+    "type": "r_markdown",
+    "hash": "2921015479",
+    "contents": "",
+    "dirty": false,
+    "created": 1663904957549.0,
+    "source_on_save": false,
+    "relative_order": 5,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "367,51",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1663906347,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1663906347671,
+    "read_only": false,
+    "read_only_alternatives": []
+}
